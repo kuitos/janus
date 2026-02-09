@@ -58,6 +58,16 @@ Each configuration directory should contain:
 
 ## Usage
 
+### First Time Setup
+
+After installation, create your configuration file:
+
+```bash
+mkdir -p ~/.config/opencode-env
+```
+
+Then configure your path mappings (see Configuration section above).
+
 ### Test a Path
 
 Test which configuration would be used for a given path:
@@ -74,7 +84,7 @@ Run OpenCode with the appropriate configuration for your current directory:
 opencode-env exec -- --help
 ```
 
-### Install Shell Hook
+### Install Shell Hook (Recommended)
 
 Generate a shell hook for automatic configuration switching:
 
@@ -86,7 +96,12 @@ opencode-env install-shell-hook --shell zsh >> ~/.zshrc
 opencode-env install-shell-hook --shell bash >> ~/.bashrc
 ```
 
-The shell hook creates a wrapper function that automatically sets the correct configuration based on your current directory.
+Then reload your shell:
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+The shell hook creates a wrapper function that automatically sets the correct configuration based on your current directory. Now you can use `opencode` directly instead of `opencode-env exec`.
 
 ## How It Works
 
