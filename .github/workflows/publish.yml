@@ -8,6 +8,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: publish
     permissions:
       contents: read
       id-token: write
@@ -32,8 +33,6 @@ jobs:
         run: bun run typecheck
 
       - name: Publish to NPM
-        run: npm publish
+        run: npm publish --provenance --access public
         env:
           NPM_CONFIG_PROVENANCE: true
-        with:
-          node-auth-token: ${{ secrets.NPM_TOKEN }}
