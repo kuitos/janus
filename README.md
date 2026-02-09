@@ -62,48 +62,34 @@ Each configuration directory should contain:
 
 ### First Time Setup
 
-After installation, create your configuration file:
+After installation, create your configuration file at `~/.config/janus/config.json` (see Configuration section).
+
+### Install Shell Hook
+
+Install the janus hook to automatically set the correct configuration based on your current directory:
 
 ```bash
-mkdir -p ~/.config/janus
+janus install
 ```
 
-Then configure your path mappings (see Configuration section above).
+The command will automatically detect and install to `.zshrc` (if it exists) or `.bashrc`.
 
-### Test a Path
+After installation, restart your shell or run:
 
-Test which configuration would be used for a given path:
-
-```bash
-janus test /Users/yourname/work/company/project
-```
-
-### Execute OpenCode
-
-Run OpenCode with the appropriate configuration for your current directory:
-
-```bash
-janus exec -- --help
-```
-
-### Install Shell Hook (Recommended)
-
-Generate a shell hook for automatic configuration switching:
-
-```bash
-# For zsh
-janus install-shell-hook --shell zsh >> ~/.zshrc
-
-# For bash
-janus install-shell-hook --shell bash >> ~/.bashrc
-```
-
-Then reload your shell:
 ```bash
 source ~/.zshrc  # or source ~/.bashrc
 ```
 
-The shell hook creates a wrapper function that automatically sets the correct configuration based on your current directory. Now you can use `opencode` directly instead of `janus exec`.
+Now you can use `opencode` directly - it will automatically use the correct configuration based on your current directory.
+
+### Uninstall
+
+To uninstall the hook:
+
+```bash
+janus uninstall
+```
+
 
 ## How It Works
 
@@ -137,10 +123,8 @@ src/
 ├── config.test.ts        # Config tests
 ├── resolver.ts           # Path matching logic
 ├── resolver.test.ts      # Resolver tests
-├── exec.ts               # Exec command
-├── exec.test.ts          # Exec tests
-├── test-command.ts       # Test command
-├── test-command.test.ts  # Test command tests
+├── install.ts            # Shell hook installation/uninstallation
+├── install.test.ts       # Install command tests
 ├── shell-hook.ts         # Shell hook generation
 ├── shell-hook.test.ts    # Shell hook tests
 ├── cli.ts                # CLI entry point

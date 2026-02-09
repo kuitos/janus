@@ -1,54 +1,42 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util';
-import { exec } from './exec';
-import { testPath, formatTestResult } from './test-command';
-import { generateShellHook } from './shell-hook';
-import { loadConfig } from './config';
-import { homedir } from 'node:os';
-
-const CONFIG_PATH = `${homedir()}/.config/janus/config.json`;
+import {
+  detectShellRcFile,
+  getShellTypeFromRcFile,
+  isHookInstalled,
+  installHook,
+  uninstallHook
+} from './install';
 
 export function showHelp(): void {
   console.log(`Usage: janus <command> [options]
 
 Commands:
-  exec [--] <opencode-args...>        Execute opencode with matched config directory
-  test <path>                          Test specified path against mappings
-  install-shell-hook [--shell <type>] Generate shell hook script (zsh or bash)
+  install      Install shell hook to .zshrc or .bashrc
+  uninstall    Uninstall shell hook from shell RC file
 
 Options:
-  --help, -h                            Show this help message
-  --shell, -s <shell>                  Shell type for install-shell-hook (zsh|bash)
+  --help, -h   Show this help message
 `);
 }
 
-async function handleExec(positionals: string[]): Promise<number> {
+async function handleInstall(): Promise<number> {
   try {
-    const config = await loadConfig(CONFIG_PATH);
-    const cwd = process.cwd();
-    const opencodeArgs = positionals;
-    
-    return await exec(cwd, config.mappings, opencodeArgs);
-  } catch (error) {
-    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-    return 1;
-  }
-}
+    const rcFile = detectShellRcFile();
+    const shellType = getShellTypeFromRcFile(rcFile);
 
-async function handleTest(positionals: string[]): Promise<number> {
-  try {
-    if (positionals.length === 0) {
-      console.error('Error: test command requires a path argument');
+    if (isHookInstalled(rcFile)) {
+      console.error('Error: Hook already installed.');
+      console.error(`To reinstall, run: janus uninstall && janus install`);
       return 1;
     }
 
-    const config = await loadConfig(CONFIG_PATH);
-    const path = positionals[0];
-    const result = testPath(path, config.mappings);
-    const output = formatTestResult(result);
-    
-    console.log(output);
+    installHook(rcFile, shellType);
+
+    console.log(`✓ Successfully installed janus hook to ${rcFile}`);
+    console.log(`  Please restart your shell or run: source ${rcFile}`);
+
     return 0;
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
@@ -56,12 +44,20 @@ async function handleTest(positionals: string[]): Promise<number> {
   }
 }
 
-async function handleInstallShellHook(values: { shell?: string }): Promise<number> {
+async function handleUninstall(): Promise<number> {
   try {
-    const shell = (values.shell as 'zsh' | 'bash') ?? 'zsh';
-    const hook = generateShellHook(shell);
-    
-    console.log(hook);
+    const rcFile = detectShellRcFile();
+
+    if (!isHookInstalled(rcFile)) {
+      console.error('Error: Hook not installed.');
+      return 1;
+    }
+
+    uninstallHook(rcFile);
+
+    console.log(`✓ Successfully uninstalled janus hook from ${rcFile}`);
+    console.log(`  Please restart your shell or run: source ${rcFile}`);
+
     return 0;
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
@@ -72,10 +68,6 @@ async function handleInstallShellHook(values: { shell?: string }): Promise<numbe
 export async function main(args: string[]): Promise<number> {
   try {
     const options = {
-      shell: {
-        type: 'string' as const,
-        short: 's',
-      },
       help: {
         type: 'boolean' as const,
         short: 'h',
@@ -100,14 +92,11 @@ export async function main(args: string[]): Promise<number> {
     }
 
     const command = positionals[0];
-    const commandArgs = positionals.slice(1);
 
-    if (command === 'exec') {
-      return await handleExec(commandArgs);
-    } else if (command === 'test') {
-      return await handleTest(commandArgs);
-    } else if (command === 'install-shell-hook') {
-      return await handleInstallShellHook(values);
+    if (command === 'install') {
+      return await handleInstall();
+    } else if (command === 'uninstall') {
+      return await handleUninstall();
     } else {
       console.error(`Error: Unknown command: ${command}`);
       console.error('Use --help for usage information');
@@ -124,3 +113,4 @@ if (import.meta.main) {
   const exitCode = await main(process.argv.slice(2));
   process.exit(exitCode);
 }
+
