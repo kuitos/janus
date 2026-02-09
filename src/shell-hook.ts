@@ -5,7 +5,7 @@
  */
 export function generateShellHook(shell: 'zsh' | 'bash'): string {
   return `opencode() {
-  opencode-env exec -- "$@"
+  janus exec -- "$@"
 }`;
 }
 

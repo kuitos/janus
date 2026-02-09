@@ -6,7 +6,7 @@ describe('generateShellHook', () => {
     const hook = generateShellHook('zsh');
 
     expect(hook).toContain('opencode()');
-    expect(hook).toContain('opencode-env exec -- "$@"');
+    expect(hook).toContain('janus exec -- "$@"');
     expect(hook).toBeDefined();
     expect(typeof hook).toBe('string');
   });
@@ -15,7 +15,7 @@ describe('generateShellHook', () => {
     const hook = generateShellHook('bash');
 
     expect(hook).toContain('opencode()');
-    expect(hook).toContain('opencode-env exec -- "$@"');
+    expect(hook).toContain('janus exec -- "$@"');
     expect(hook).toBeDefined();
     expect(typeof hook).toBe('string');
   });
@@ -73,13 +73,13 @@ describe('generateShellHook', () => {
   it('zsh hook calls opencode-env exec command', () => {
     const hook = generateShellHook('zsh');
 
-    expect(hook).toContain('opencode-env exec');
+    expect(hook).toContain('janus exec');
   });
 
   it('bash hook calls opencode-env exec command', () => {
     const hook = generateShellHook('bash');
 
-    expect(hook).toContain('opencode-env exec');
+    expect(hook).toContain('janus exec');
   });
 });
 

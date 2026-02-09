@@ -6,7 +6,7 @@ import { ConfigSchema, type Config } from './types';
 export function getDefaultConfigPath(): string {
   const xdgConfigHome = process.env.XDG_CONFIG_HOME;
   const configBase = xdgConfigHome || join(homedir(), '.config');
-  return join(configBase, 'opencode-env', 'config.json');
+  return join(configBase, 'janus', 'config.json');
 }
 
 export function loadConfig(configPath: string): Config {
