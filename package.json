@@ -1,5 +1,5 @@
 {
-  "name": "janus",
+  "name": "opencode-janus",
   "version": "0.1.0",
   "description": "Directory-based OpenCode configuration switching tool. Automatically switch between different OpenCode configurations based on your current working directory.",
   "type": "module",
