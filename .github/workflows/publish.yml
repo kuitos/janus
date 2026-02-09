@@ -21,7 +21,7 @@ jobs:
           bun-version: latest
 
       - name: Upgrade npm to latest
-        run: npm install -g npm@latest
+        run: sudo npm install -g npm@latest
 
       - name: Check npm version
         run: npm --version
