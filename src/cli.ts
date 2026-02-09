@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { parseArgs } from 'node:util';
 import { exec } from './exec';
 import { testPath, formatTestResult } from './test-command';
@@ -115,4 +117,10 @@ export async function main(args: string[]): Promise<number> {
     console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
   }
+}
+
+// Execute if run directly
+if (import.meta.main) {
+  const exitCode = await main(process.argv.slice(2));
+  process.exit(exitCode);
 }

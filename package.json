@@ -1,4 +1,41 @@
 {
+  "name": "opencode-env",
+  "version": "0.1.0",
+  "description": "Directory-based OpenCode configuration switching tool. Automatically switch between different OpenCode configurations based on your current working directory.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "opencode-env": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "keywords": [
+    "opencode",
+    "configuration",
+    "directory-based",
+    "environment",
+    "cli"
+  ],
+  "author": "kuitos",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kuitos/opencode-env.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kuitos/opencode-env/issues"
+  },
+  "homepage": "https://github.com/kuitos/opencode-env#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "zod": "^3.23.8"
   },
@@ -6,6 +43,14 @@
     "@types/bun": "^1.3.8"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "bun run compile-tsc && bun run compile-bun && bun run make-executable",
+    "compile-tsc": "tsc --emitDeclarationOnly --outDir dist",
+    "compile-bun": "bun build src/cli.ts src/index.ts --target=node --format=esm --outdir=dist --external:zod",
+    "make-executable": "chmod +x dist/cli.js",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage",
+    "prepublishOnly": "bun run test && bun run build && bun run typecheck",
+    "prepack": "bun run build"
   }
 }
