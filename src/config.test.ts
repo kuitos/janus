@@ -11,7 +11,7 @@ describe('getDefaultConfigPath', () => {
     try {
       process.env.XDG_CONFIG_HOME = '/test/config';
       const path = getDefaultConfigPath();
-      expect(path).toBe('/test/config/opencode-env/config.json');
+      expect(path).toBe('/test/config/janus/config.json');
     } finally {
       process.env.XDG_CONFIG_HOME = originalXDG;
     }
@@ -22,7 +22,7 @@ describe('getDefaultConfigPath', () => {
     try {
       delete process.env.XDG_CONFIG_HOME;
       const path = getDefaultConfigPath();
-      expect(path).toMatch(/\.config\/opencode-env\/config\.json$/);
+      expect(path).toMatch(/\.config\/janus\/config\.json$/);
     } finally {
       process.env.XDG_CONFIG_HOME = originalXDG;
     }
@@ -33,7 +33,7 @@ describe('loadConfig', () => {
   let tempDir: string;
 
   beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), 'opencode-env-test-'));
+    tempDir = mkdtempSync(join(tmpdir(), 'janus-test-'));
   });
 
   afterEach(() => {
@@ -169,11 +169,11 @@ describe('loadConfig', () => {
 describe('loadDefaultConfig', () => {
   it('loads config from default location', () => {
     const originalXDG = process.env.XDG_CONFIG_HOME;
-    const tempDir = mkdtempSync(join(tmpdir(), 'opencode-env-test-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'janus-test-'));
 
     try {
       process.env.XDG_CONFIG_HOME = tempDir;
-      const configDir = join(tempDir, 'opencode-env');
+      const configDir = join(tempDir, 'janus');
       const configPath = join(configDir, 'config.json');
 
       const { mkdirSync } = require('node:fs');
@@ -200,7 +200,7 @@ describe('loadDefaultConfig', () => {
   it('throws error when default config file does not exist', () => {
     const originalXDGX = process.env.XDG_CONFIG_HOME;
     const originalXDG = process.env.XDG_CONFIG_HOME;
-    const tempDir = mkdtempSync(join(tmpdir(), 'opencode-env-test-'));
+    const tempDir = mkdtempSync(join(tmpdir(), 'janus-test-'));
 
     try {
       process.env.XDG_CONFIG_HOME = tempDir;

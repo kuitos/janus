@@ -7,10 +7,10 @@ import { generateShellHook } from './shell-hook';
 import { loadConfig } from './config';
 import { homedir } from 'node:os';
 
-const CONFIG_PATH = `${homedir()}/.config/opencode-env/config.json`;
+const CONFIG_PATH = `${homedir()}/.config/janus/config.json`;
 
 export function showHelp(): void {
-  console.log(`Usage: opencode-env <command> [options]
+  console.log(`Usage: janus <command> [options]
 
 Commands:
   exec [--] <opencode-args...>        Execute opencode with matched config directory

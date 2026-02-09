@@ -1,21 +1,23 @@
-# opencode-env
+# janus
 
 Directory-based OpenCode configuration switching tool. Automatically switch between different OpenCode configurations based on your current working directory.
+
+Named after the Roman god of transitions and new beginnings—janus transforms your configuration seamlessly as you move between different projects.
 
 ## Installation
 
 ### Via NPM (Recommended)
 
 ```bash
-npm install -g opencode-env
+npm install -g janus
 ```
 
 ### Via Bun (Development)
 
 ```bash
 # Clone the repository
-git clone https://github.com/kuitos/opencode-env.git
-cd opencode-env
+git clone https://github.com/kuitos/janus.git
+cd janus
 
 # Install dependencies
 bun install
@@ -29,7 +31,7 @@ npm install -g .
 
 ## Configuration
 
-Create a configuration file at `~/.config/opencode-env/config.json`:
+Create a configuration file at `~/.config/janus/config.json`:
 
 ```json
 {
@@ -63,7 +65,7 @@ Each configuration directory should contain:
 After installation, create your configuration file:
 
 ```bash
-mkdir -p ~/.config/opencode-env
+mkdir -p ~/.config/janus
 ```
 
 Then configure your path mappings (see Configuration section above).
@@ -73,7 +75,7 @@ Then configure your path mappings (see Configuration section above).
 Test which configuration would be used for a given path:
 
 ```bash
-opencode-env test /Users/yourname/work/company/project
+janus test /Users/yourname/work/company/project
 ```
 
 ### Execute OpenCode
@@ -81,7 +83,7 @@ opencode-env test /Users/yourname/work/company/project
 Run OpenCode with the appropriate configuration for your current directory:
 
 ```bash
-opencode-env exec -- --help
+janus exec -- --help
 ```
 
 ### Install Shell Hook (Recommended)
@@ -90,10 +92,10 @@ Generate a shell hook for automatic configuration switching:
 
 ```bash
 # For zsh
-opencode-env install-shell-hook --shell zsh >> ~/.zshrc
+janus install-shell-hook --shell zsh >> ~/.zshrc
 
 # For bash
-opencode-env install-shell-hook --shell bash >> ~/.bashrc
+janus install-shell-hook --shell bash >> ~/.bashrc
 ```
 
 Then reload your shell:
@@ -101,11 +103,11 @@ Then reload your shell:
 source ~/.zshrc  # or source ~/.bashrc
 ```
 
-The shell hook creates a wrapper function that automatically sets the correct configuration based on your current directory. Now you can use `opencode` directly instead of `opencode-env exec`.
+The shell hook creates a wrapper function that automatically sets the correct configuration based on your current directory. Now you can use `opencode` directly instead of `janus exec`.
 
 ## How It Works
 
-1. **Path Matching**: When you run a command, opencode-env checks your current working directory against the configured patterns
+1. **Path Matching**: When you run a command, janus checks your current working directory against the configured patterns
 2. **Longest Prefix Priority**: If multiple patterns match, the longest (most specific) pattern wins
 3. **Environment Variable**: The tool sets `OPENCODE_CONFIG_DIR` to point to the matched configuration directory
 4. **Process Isolation**: Each opencode process gets its own configuration, preventing conflicts between different projects
