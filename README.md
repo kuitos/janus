@@ -4,6 +4,14 @@ Directory-based OpenCode configuration switching tool. Automatically switch betw
 
 ## Installation
 
+### Via NPM (Recommended)
+
+```bash
+npm install -g opencode-env
+```
+
+### Via Bun (Development)
+
 ```bash
 # Clone the repository
 git clone https://github.com/kuitos/opencode-env.git
@@ -14,6 +22,9 @@ bun install
 
 # Build the project
 bun run build
+
+# Install globally from source
+npm install -g .
 ```
 
 ## Configuration
