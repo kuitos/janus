@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: publish
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -45,3 +45,38 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NPM_CONFIG_PROVENANCE: true
+
+      - name: Extract version from tag
+        id: extract_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Get previous tag
+        id: previous_tag
+        run: |
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^${GITHUB_REF#refs/tags/}$" | head -n 1)
+          echo "tag=${PREVIOUS_TAG:-$(git rev-list --max-parents=0 HEAD)}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## What's Changed" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+
+          # Get commits since last tag
+          git log ${{ steps.previous_tag.outputs.tag }}..HEAD --pretty=format:"- %s (%h)" --no-merges >> CHANGELOG.md
+
+          echo "" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.previous_tag.outputs.tag }}...${GITHUB_REF#refs/tags/}" >> CHANGELOG.md
+
+          cat CHANGELOG.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
