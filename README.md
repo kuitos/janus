@@ -9,7 +9,7 @@ Named after the Roman god of transitions and new beginnings—janus transforms y
 ### Via NPM (Recommended)
 
 ```bash
-npm install -g janus
+npm install -g opencode-janus
 ```
 
 ### Via Bun (Development)
