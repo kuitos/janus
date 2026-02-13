@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig, loadDefaultConfig, getDefaultConfigPath } from './config';
 import type { Config, Mapping } from './types';
@@ -163,6 +163,68 @@ describe('loadConfig', () => {
 
     expect(() => loadConfig(configPath)).toThrow();
     expect(() => loadConfig(configPath)).toThrow(/match/i);
+  });
+
+  it('expands tilde in match patterns', () => {
+    const configPath = join(tempDir, 'config.json');
+    const homeDir = homedir();
+    const configWithTilde = {
+      mappings: [
+        {
+          match: ['~/work/**'],
+          configDir: '~/.config/opencode-work'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(configWithTilde));
+
+    const config = loadConfig(configPath);
+
+    expect(config.mappings[0].match).toEqual([`${homeDir}/work/**`]);
+    expect(config.mappings[0].configDir).toBe(`${homeDir}/.config/opencode-work`);
+  });
+
+  it('expands tilde in multiple patterns', () => {
+    const configPath = join(tempDir, 'config.json');
+    const homeDir = homedir();
+    const configWithTilde = {
+      mappings: [
+        {
+          match: ['~/work/**', '~/projects/**'],
+          configDir: '~/.config/opencode'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(configWithTilde));
+
+    const config = loadConfig(configPath);
+
+    expect(config.mappings[0].match).toEqual([
+      `${homeDir}/work/**`,
+      `${homeDir}/projects/**`
+    ]);
+  });
+
+  it('handles mixed tilde and absolute paths', () => {
+    const configPath = join(tempDir, 'config.json');
+    const homeDir = homedir();
+    const configWithMixed = {
+      mappings: [
+        {
+          match: ['~/work/**', '/absolute/path/**'],
+          configDir: '~/.config/opencode'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(configWithMixed));
+
+    const config = loadConfig(configPath);
+
+    expect(config.mappings[0].match).toEqual([
+      `${homeDir}/work/**`,
+      '/absolute/path/**'
+    ]);
+    expect(config.mappings[0].configDir).toBe(`${homeDir}/.config/opencode`);
   });
 });
 

@@ -1,4 +1,5 @@
 import { describe, test, expect } from 'bun:test';
+import { homedir } from 'node:os';
 import { resolvePath, matchesPattern, findLongestMatch } from './resolver';
 import type { Mapping } from './types';
 
@@ -211,12 +212,12 @@ describe('resolvePath', () => {
 
   test('returns first match when multiple patterns have equal length', () => {
     const mappings: Mapping[] = [
-      { 
+      {
         match: [
           '/Users/kuitos/work/company-a',
           '/Users/kuitos/work/company-b'
         ],
-        configDir: '/config/first' 
+        configDir: '/config/first'
       },
       {
         match: ['/Users/kuitos/work/company-a'],
@@ -226,5 +227,33 @@ describe('resolvePath', () => {
     const result = resolvePath('/Users/kuitos/work/company-a', mappings);
     expect(result).not.toBeNull();
     expect(result!.configDir).toBe('/config/first');
+  });
+
+  test('expands tilde in input path', () => {
+    const homeDir = homedir();
+    const mappings: Mapping[] = [
+      { match: [`${homeDir}/work/**`], configDir: '/config/work' }
+    ];
+
+    // Test with tilde in input path
+    const result = resolvePath('~/work/project', mappings);
+    expect(result).toEqual({
+      configDir: '/config/work',
+      matchedPattern: `${homeDir}/work/**`
+    });
+  });
+
+  test('matches tilde pattern with absolute input path', () => {
+    const homeDir = homedir();
+    const mappings: Mapping[] = [
+      { match: [`${homeDir}/work/**`], configDir: '/config/work' }
+    ];
+
+    // Test with absolute path that should match expanded tilde pattern
+    const result = resolvePath(`${homeDir}/work/project`, mappings);
+    expect(result).toEqual({
+      configDir: '/config/work',
+      matchedPattern: `${homeDir}/work/**`
+    });
   });
 });
