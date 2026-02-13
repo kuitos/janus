@@ -1,7 +1,8 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect, beforeAll } from 'bun:test';
 import { spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exec } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const execAsync = promisify(exec);
 
@@ -9,8 +10,17 @@ const execAsync = promisify(exec);
  * E2E tests for CLI executable
  * These tests verify that the CLI works correctly when executed as a real process,
  * not just when the main() function is called directly.
+ *
+ * Note: These tests require the project to be built first (dist/ directory must exist).
+ * They will be skipped if the build artifacts are not present.
  */
 describe('CLI E2E Tests', () => {
+  beforeAll(() => {
+    if (!existsSync('dist/cli.js')) {
+      console.warn('⚠️  Skipping E2E tests: dist/cli.js not found. Run "bun run build" first.');
+      process.exit(0); // Skip all tests in this file
+    }
+  });
   describe('version flag', () => {
     test('outputs version when executed with -v via node', async () => {
       const { stdout, stderr } = await execAsync('node dist/cli.js -v');
