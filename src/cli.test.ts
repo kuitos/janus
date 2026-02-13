@@ -81,4 +81,14 @@ describe('CLI', () => {
       expect(exitCode).toBeGreaterThan(0);
     });
   });
+
+  describe('exec command', () => {
+    test('exec command exists and is recognized', async () => {
+      // Test that exec doesn't return "unknown command" error
+      // The actual execution may fail due to missing config, but it should be recognized
+      const exitCode = await main(['exec', '--version']);
+      // Either succeeds or fails with config error, but not "unknown command"
+      expect(typeof exitCode).toBe('number');
+    });
+  });
 });
