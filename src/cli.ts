@@ -11,6 +11,8 @@ import {
   installHook,
   uninstallHook
 } from './install';
+import { exec } from './exec';
+import { loadDefaultConfig } from './config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -34,6 +36,7 @@ export function showHelp(): void {
 Commands:
   install      Install shell hook to .zshrc or .bashrc
   uninstall    Uninstall shell hook from shell RC file
+  exec         Execute opencode with configured environment (used by shell hook)
 
 Options:
   --help, -h      Show this help message
@@ -85,6 +88,17 @@ async function handleUninstall(): Promise<number> {
   }
 }
 
+async function handleExec(args: string[]): Promise<number> {
+  try {
+    const cwd = process.cwd();
+    const config = loadDefaultConfig();
+    return await exec(cwd, config.mappings, args);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    return 1;
+  }
+}
+
 export async function main(args: string[]): Promise<number> {
   try {
     const options = {
@@ -126,6 +140,10 @@ export async function main(args: string[]): Promise<number> {
       return await handleInstall();
     } else if (command === 'uninstall') {
       return await handleUninstall();
+    } else if (command === 'exec') {
+      // exec 命令接收所有剩余的参数
+      const execArgs = positionals.slice(1);
+      return await handleExec(execArgs);
     } else {
       console.error(`Error: Unknown command: ${command}`);
       console.error('Use --help for usage information');
