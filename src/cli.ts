@@ -156,7 +156,8 @@ export async function main(args: string[]): Promise<number> {
 }
 
 // Execute if run directly
-if (import.meta.main) {
+// Check if this module is the main module (works in both Node.js and Bun)
+if (import.meta.url === `file://${process.argv[1]}`) {
   const exitCode = await main(process.argv.slice(2));
   process.exit(exitCode);
 }
