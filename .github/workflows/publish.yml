@@ -14,6 +14,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history and tags for changelog generation
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
@@ -59,15 +61,23 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          PREVIOUS_TAG="${{ steps.previous_tag.outputs.tag }}"
+
           echo "## What's Changed" > CHANGELOG.md
           echo "" >> CHANGELOG.md
 
-          # Get commits since last tag
-          git log ${{ steps.previous_tag.outputs.tag }}..HEAD --pretty=format:"- %s (%h)" --no-merges >> CHANGELOG.md
+          # Get commits between previous tag and current tag
+          if git rev-parse "$PREVIOUS_TAG" >/dev/null 2>&1; then
+            git log ${PREVIOUS_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --no-merges >> CHANGELOG.md
+          else
+            # Fallback: if previous tag doesn't exist, show all commits for current tag
+            git log ${CURRENT_TAG} --pretty=format:"- %s (%h)" --no-merges >> CHANGELOG.md
+          fi
 
           echo "" >> CHANGELOG.md
           echo "" >> CHANGELOG.md
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.previous_tag.outputs.tag }}...${GITHUB_REF#refs/tags/}" >> CHANGELOG.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${CURRENT_TAG}" >> CHANGELOG.md
 
           cat CHANGELOG.md
 
