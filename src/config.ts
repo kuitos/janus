@@ -20,9 +20,10 @@ export function loadConfig(configPath: string): Config {
     const parsedConfig = JSON.parse(fileContent);
     const config = ConfigSchema.parse(parsedConfig);
 
-    // Expand tilde (~) in all match patterns
+    // Expand tilde (~) in all match patterns and defaultConfigDir
     const expandedConfig: Config = {
       ...config,
+      defaultConfigDir: config.defaultConfigDir ? expandTilde(config.defaultConfigDir) : undefined,
       mappings: config.mappings.map(mapping => ({
         ...mapping,
         match: mapping.match.map(pattern => expandTilde(pattern)),

@@ -64,9 +64,17 @@ export function findLongestMatch(
 
 export function resolvePath(
   path: string,
-  mappings: Mapping[]
+  mappings: Mapping[],
+  defaultConfigDir?: string
 ): { configDir: string; matchedPattern: string } | null {
   if (mappings.length === 0) {
+    // If no mappings but defaultConfigDir is set, return it
+    if (defaultConfigDir) {
+      return {
+        configDir: defaultConfigDir,
+        matchedPattern: '(default)'
+      };
+    }
     return null;
   }
 
@@ -90,10 +98,21 @@ export function resolvePath(
     const resolvedPath = realpathSync(expandedPath);
 
     if (resolvedPath !== expandedPath) {
-      return findBestMatchForPath(resolvedPath, allCandidates);
+      const symlinkMatch = findBestMatchForPath(resolvedPath, allCandidates);
+      if (symlinkMatch) {
+        return symlinkMatch;
+      }
     }
   } catch {
-    return null;
+    // If realpath fails, fall through to default handling
+  }
+
+  // No match found, return default if configured
+  if (defaultConfigDir) {
+    return {
+      configDir: defaultConfigDir,
+      matchedPattern: '(default)'
+    };
   }
 
   return null;

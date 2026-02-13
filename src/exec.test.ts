@@ -127,9 +127,25 @@ describe('exec', () => {
       }
     ];
     const opencodeArgs = ['--version'];
-    
+
     const exitCode = 1;
-    
+
     expect(exitCode).toBe(1);
+  });
+
+  it('uses defaultConfigDir when no mapping matches', async () => {
+    const proc = Bun.spawn(['sh', '-c', `echo $OPENCODE_CONFIG_DIR`], {
+      env: {
+        ...process.env,
+        OPENCODE_CONFIG_DIR: '/test/default/config'
+      },
+      stdio: ['inherit', 'pipe', 'inherit']
+    });
+
+    const stdout = await new Response(proc.stdout).text();
+    const exitCode = await proc.exited;
+
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toBe('/test/default/config');
   });
 });

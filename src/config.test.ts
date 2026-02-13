@@ -226,6 +226,62 @@ describe('loadConfig', () => {
     ]);
     expect(config.mappings[0].configDir).toBe(`${homeDir}/.config/opencode`);
   });
+
+  it('loads config with defaultConfigDir', () => {
+    const configPath = join(tempDir, 'config.json');
+    const validConfig = {
+      defaultConfigDir: '/Users/test/.config/opencode-default',
+      mappings: [
+        {
+          match: ['/Users/test/work/**'],
+          configDir: '/Users/test/.config/opencode-work'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(validConfig));
+
+    const config = loadConfig(configPath);
+
+    expect(config.defaultConfigDir).toBe('/Users/test/.config/opencode-default');
+    expect(config.mappings).toHaveLength(1);
+  });
+
+  it('loads config without defaultConfigDir (backward compatibility)', () => {
+    const configPath = join(tempDir, 'config.json');
+    const validConfig = {
+      mappings: [
+        {
+          match: ['/Users/test/work/**'],
+          configDir: '/Users/test/.config/opencode-work'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(validConfig));
+
+    const config = loadConfig(configPath);
+
+    expect(config.defaultConfigDir).toBeUndefined();
+    expect(config.mappings).toHaveLength(1);
+  });
+
+  it('expands tilde in defaultConfigDir', () => {
+    const configPath = join(tempDir, 'config.json');
+    const homeDir = homedir();
+    const configWithTilde = {
+      defaultConfigDir: '~/.config/opencode-default',
+      mappings: [
+        {
+          match: ['~/work/**'],
+          configDir: '~/.config/opencode-work'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(configWithTilde));
+
+    const config = loadConfig(configPath);
+
+    expect(config.defaultConfigDir).toBe(`${homeDir}/.config/opencode-default`);
+  });
 });
 
 describe('loadDefaultConfig', () => {
