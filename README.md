@@ -130,8 +130,25 @@ Each `configDir` should contain:
 
 **Pattern Matching:**
 - Supports glob patterns: `**`, `*`, `?`
+- Supports tilde (`~`) expansion for home directory
 - Multiple patterns per mapping
 - Longest (most specific) match wins
+
+**Path Examples:**
+```jsonc
+{
+  "mappings": [
+    {
+      "match": ["~/work/**"],           // ✅ Tilde expanded to home directory
+      "configDir": "~/.config/work"     // ✅ Also supports tilde
+    },
+    {
+      "match": ["/absolute/path/**"],   // ✅ Absolute path
+      "configDir": "/absolute/config"
+    }
+  ]
+}
+```
 
 </details>
 

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { ConfigSchema, type Config } from './types';
+import { expandTilde } from './path-utils';
 
 export function getDefaultConfigPath(): string {
   const xdgConfigHome = process.env.XDG_CONFIG_HOME;
@@ -17,7 +18,19 @@ export function loadConfig(configPath: string): Config {
   try {
     const fileContent = readFileSync(configPath, 'utf-8');
     const parsedConfig = JSON.parse(fileContent);
-    return ConfigSchema.parse(parsedConfig);
+    const config = ConfigSchema.parse(parsedConfig);
+
+    // Expand tilde (~) in all match patterns
+    const expandedConfig: Config = {
+      ...config,
+      mappings: config.mappings.map(mapping => ({
+        ...mapping,
+        match: mapping.match.map(pattern => expandTilde(pattern)),
+        configDir: expandTilde(mapping.configDir)
+      }))
+    };
+
+    return expandedConfig;
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error(`Invalid JSON in config file: ${configPath}`);

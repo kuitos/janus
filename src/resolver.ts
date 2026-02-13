@@ -1,5 +1,6 @@
 import { realpathSync } from 'fs';
 import type { Mapping } from './types';
+import { expandTilde } from './path-utils';
 
 export function matchesPattern(path: string, pattern: string): boolean {
   if (!path || !pattern) {
@@ -69,23 +70,26 @@ export function resolvePath(
     return null;
   }
 
-  const allCandidates: MatchCandidate[] = mappings.flatMap(mapping => 
+  // Expand tilde in input path
+  const expandedPath = expandTilde(path);
+
+  const allCandidates: MatchCandidate[] = mappings.flatMap(mapping =>
     mapping.match.map(pattern => ({
       pattern,
       configDir: mapping.configDir
     }))
   );
 
-  const bestMatch = findBestMatchForPath(path, allCandidates);
+  const bestMatch = findBestMatchForPath(expandedPath, allCandidates);
 
   if (bestMatch) {
     return bestMatch;
   }
 
   try {
-    const resolvedPath = realpathSync(path);
-    
-    if (resolvedPath !== path) {
+    const resolvedPath = realpathSync(expandedPath);
+
+    if (resolvedPath !== expandedPath) {
       return findBestMatchForPath(resolvedPath, allCandidates);
     }
   } catch {
