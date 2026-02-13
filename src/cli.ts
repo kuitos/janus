@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import {
   detectShellRcFile,
   getShellTypeFromRcFile,
@@ -8,6 +11,22 @@ import {
   installHook,
   uninstallHook
 } from './install';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function getVersion(): string {
+  try {
+    const packageJsonPath = join(__dirname, '..', 'package.json');
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    return packageJson.version;
+  } catch {
+    return 'unknown';
+  }
+}
+
+export function showVersion(): void {
+  console.log(getVersion());
+}
 
 export function showHelp(): void {
   console.log(`Usage: janus <command> [options]
@@ -17,7 +36,8 @@ Commands:
   uninstall    Uninstall shell hook from shell RC file
 
 Options:
-  --help, -h   Show this help message
+  --help, -h      Show this help message
+  --version, -v   Show version number
 `);
 }
 
@@ -72,6 +92,10 @@ export async function main(args: string[]): Promise<number> {
         type: 'boolean' as const,
         short: 'h',
       },
+      version: {
+        type: 'boolean' as const,
+        short: 'v',
+      },
     };
 
     const { values, positionals } = parseArgs({
@@ -82,6 +106,11 @@ export async function main(args: string[]): Promise<number> {
 
     if (values.help) {
       showHelp();
+      return 0;
+    }
+
+    if (values.version) {
+      showVersion();
       return 0;
     }
 

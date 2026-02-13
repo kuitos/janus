@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { main, showHelp } from './cli';
+import { main, showHelp, showVersion } from './cli';
 
 describe('CLI', () => {
   describe('help flag', () => {
@@ -17,6 +17,24 @@ describe('CLI', () => {
 
     test('showHelp function outputs help message', () => {
       showHelp();
+    });
+  });
+
+  describe('version flag', () => {
+    test('shows version with --version flag', async () => {
+      const exitCode = await main(['--version']);
+
+      expect(exitCode).toBe(0);
+    });
+
+    test('shows version with -v flag', async () => {
+      const exitCode = await main(['-v']);
+
+      expect(exitCode).toBe(0);
+    });
+
+    test('showVersion function outputs version', () => {
+      showVersion();
     });
   });
 
