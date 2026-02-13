@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -156,8 +156,10 @@ export async function main(args: string[]): Promise<number> {
 }
 
 // Execute if run directly
-// Check if this module is the main module (works in both Node.js and Bun)
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Resolve symlinks to compare actual file paths
+const scriptPath = fileURLToPath(import.meta.url);
+const mainModule = process.argv[1] ? realpathSync(process.argv[1]) : null;
+if (mainModule && realpathSync(scriptPath) === mainModule) {
   const exitCode = await main(process.argv.slice(2));
   process.exit(exitCode);
 }
