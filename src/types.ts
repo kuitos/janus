@@ -6,6 +6,7 @@ export const MappingSchema = z.object({
 });
 
 export const ConfigSchema = z.object({
+  defaultConfigDir: z.string().optional(),
   mappings: z.array(MappingSchema).min(1, 'config must have at least one mapping')
 });
 

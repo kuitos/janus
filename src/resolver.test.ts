@@ -256,4 +256,43 @@ describe('resolvePath', () => {
       matchedPattern: `${homeDir}/work/**`
     });
   });
+
+  test('returns defaultConfigDir when no mappings match', () => {
+    const mappings: Mapping[] = [
+      { match: ['/Users/kuitos/work/**'], configDir: '/config/work' }
+    ];
+    const result = resolvePath('/Users/kuitos/personal/project', mappings, '/config/default');
+    expect(result).toEqual({
+      configDir: '/config/default',
+      matchedPattern: '(default)'
+    });
+  });
+
+  test('returns defaultConfigDir for empty mappings', () => {
+    const mappings: Mapping[] = [];
+    const result = resolvePath('/any/path', mappings, '/config/default');
+    expect(result).toEqual({
+      configDir: '/config/default',
+      matchedPattern: '(default)'
+    });
+  });
+
+  test('prefers mapping match over defaultConfigDir', () => {
+    const mappings: Mapping[] = [
+      { match: ['/Users/kuitos/work/**'], configDir: '/config/work' }
+    ];
+    const result = resolvePath('/Users/kuitos/work/project', mappings, '/config/default');
+    expect(result).toEqual({
+      configDir: '/config/work',
+      matchedPattern: '/Users/kuitos/work/**'
+    });
+  });
+
+  test('returns null when no match and no defaultConfigDir', () => {
+    const mappings: Mapping[] = [
+      { match: ['/Users/kuitos/work/**'], configDir: '/config/work' }
+    ];
+    const result = resolvePath('/Users/kuitos/personal/project', mappings);
+    expect(result).toBeNull();
+  });
 });

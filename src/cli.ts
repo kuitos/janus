@@ -92,7 +92,7 @@ async function handleExec(args: string[]): Promise<number> {
   try {
     const cwd = process.cwd();
     const config = loadDefaultConfig();
-    return await exec(cwd, config.mappings, args);
+    return await exec(cwd, config.mappings, args, config.defaultConfigDir);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
     return 1;

@@ -29,9 +29,10 @@ export async function execWithConfig(
 export async function exec(
   cwd: string,
   mappings: Mapping[],
-  opencodeArgs: string[]
+  opencodeArgs: string[],
+  defaultConfigDir?: string
 ): Promise<number> {
-  const match = resolvePath(cwd, mappings);
+  const match = resolvePath(cwd, mappings, defaultConfigDir);
 
   if (!match) {
     return 1;

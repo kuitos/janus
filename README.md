@@ -92,6 +92,7 @@ Create `~/.config/janus/config.json` with your mapping rules:
 
 ```jsonc
 {
+  "defaultConfigDir": "/Users/yourname/.config/opencode-default", // Optional: Fallback config for unmatched paths
   "mappings": [
     {
       "match": ["/Users/yourname/work/**"],        // Company projects
@@ -122,21 +123,24 @@ Each `configDir` should contain:
 <details>
 <summary>📖 Configuration Reference</summary>
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `mappings` | `Array` | List of directory-to-config mapping rules |
-| `match` | `string[]` | Path patterns to match (supports `**` glob) |
-| `configDir` | `string` | Absolute path to configuration directory |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `defaultConfigDir` | `string` | No | Fallback configuration directory when no mappings match |
+| `mappings` | `Array` | Yes | List of directory-to-config mapping rules |
+| `match` | `string[]` | Yes | Path patterns to match (supports `**` glob) |
+| `configDir` | `string` | Yes | Absolute path to configuration directory |
 
 **Pattern Matching:**
 - Supports glob patterns: `**`, `*`, `?`
 - Supports tilde (`~`) expansion for home directory
 - Multiple patterns per mapping
 - Longest (most specific) match wins
+- Falls back to `defaultConfigDir` if configured and no match found
 
 **Path Examples:**
 ```jsonc
 {
+  "defaultConfigDir": "~/.config/opencode-default",  // ✅ Optional fallback
   "mappings": [
     {
       "match": ["~/work/**"],           // ✅ Tilde expanded to home directory
@@ -149,6 +153,11 @@ Each `configDir` should contain:
   ]
 }
 ```
+
+**Default Configuration Behavior:**
+- When a directory doesn't match any pattern in `mappings`, `defaultConfigDir` is used (if configured)
+- If `defaultConfigDir` is not set, unmatched directories will not use any configuration (backward compatible)
+- Useful for providing a general-purpose configuration for casual projects
 
 </details>
 
