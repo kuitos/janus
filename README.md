@@ -1,145 +1,213 @@
-# janus
+<div align="center">
 
-Directory-based OpenCode configuration switching tool. Automatically switch between different OpenCode configurations based on your current working directory.
+# 🔀 Janus
 
-Named after the Roman god of transitions and new beginnings—janus transforms your configuration seamlessly as you move between different projects.
+**Directory-aware OpenCode configuration switcher**
 
-## Installation
+*Named after the Roman god of transitions—seamlessly transform your configuration as you navigate between projects*
 
-### Via NPM (Recommended)
+[![npm version](https://img.shields.io/npm/v/opencode-janus.svg?style=flat-square)](https://www.npmjs.com/package/opencode-janus)
+[![npm downloads](https://img.shields.io/npm/dm/opencode-janus.svg?style=flat-square)](https://www.npmjs.com/package/opencode-janus)
+[![License](https://img.shields.io/npm/l/opencode-janus.svg?style=flat-square)](https://github.com/kuitos/janus/blob/main/LICENSE)
+[![Node.js Version](https://img.shields.io/node/v/opencode-janus.svg?style=flat-square)](https://nodejs.org)
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Configuration](#%EF%B8%8F-configuration) • [How It Works](#-how-it-works)
+
+</div>
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 🎯 Smart Path Matching
+Automatically detects your working directory and applies the right configuration
+
+</td>
+<td width="50%">
+
+### ⚡ Zero Overhead
+Lightweight shell integration with instant switching
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🔒 Process Isolation
+Each OpenCode instance runs with its own isolated configuration
+
+</td>
+<td width="50%">
+
+### 🎨 Flexible Patterns
+Full glob pattern support with longest-prefix priority
+
+</td>
+</tr>
+</table>
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
 npm install -g opencode-janus
 ```
 
-### Via Bun (Development)
+<details>
+<summary>Alternative: Install from source</summary>
 
 ```bash
-# Clone the repository
 git clone https://github.com/kuitos/janus.git
 cd janus
-
-# Install dependencies
-bun install
-
-# Build the project
-bun run build
-
-# Install globally from source
+bun install && bun run build
 npm install -g .
 ```
 
-## Configuration
+</details>
 
-Create a configuration file at `~/.config/janus/config.json`:
+### Setup in 3 steps
 
-```json
+```bash
+# 1. Create your configuration file
+mkdir -p ~/.config/janus
+nano ~/.config/janus/config.json
+
+# 2. Install shell hook (auto-detects zsh/bash)
+janus install
+
+# 3. Reload your shell
+source ~/.zshrc  # or ~/.bashrc
+```
+
+**That's it!** 🎉 Your `opencode` command now adapts to each directory.
+
+## ⚙️ Configuration
+
+Create `~/.config/janus/config.json` with your mapping rules:
+
+```jsonc
 {
   "mappings": [
     {
-      "match": ["/Users/yourname/work/company/**"],
-      "configDir": "/Users/yourname/.config/opencode-company"
+      "match": ["/Users/yourname/work/**"],        // Company projects
+      "configDir": "/Users/yourname/.config/opencode-work"
     },
     {
-      "match": ["/Users/yourname/projects/oss/**"],
+      "match": ["/Users/yourname/projects/oss/**"], // Open source
       "configDir": "/Users/yourname/.config/opencode-oss"
+    },
+    {
+      "match": ["/Users/yourname/personal/**"],     // Personal projects
+      "configDir": "/Users/yourname/.config/opencode-personal"
     }
   ]
 }
 ```
 
-### Configuration Format
+### Configuration Structure
 
-- `mappings`: Array of mapping rules
-  - `match`: Array of path patterns (supports glob patterns with `**`)
-  - `configDir`: The configuration directory to use for matching paths
+Each `configDir` should contain:
 
-Each configuration directory should contain:
-- `opencode.json` - OpenCode configuration
-- `oh-my-opencode.json` - oh-my-opencode configuration
-
-## Usage
-
-### First Time Setup
-
-After installation, create your configuration file at `~/.config/janus/config.json` (see Configuration section).
-
-### Install Shell Hook
-
-Install the janus hook to automatically set the correct configuration based on your current directory:
-
-```bash
-janus install
+```
+~/.config/opencode-work/
+├── opencode.json           # OpenCode settings
+└── oh-my-opencode.json     # oh-my-opencode plugins
 ```
 
-The command will automatically detect and install to `.zshrc` (if it exists) or `.bashrc`.
+<details>
+<summary>📖 Configuration Reference</summary>
 
-After installation, restart your shell or run:
+| Field | Type | Description |
+|-------|------|-------------|
+| `mappings` | `Array` | List of directory-to-config mapping rules |
+| `match` | `string[]` | Path patterns to match (supports `**` glob) |
+| `configDir` | `string` | Absolute path to configuration directory |
 
-```bash
-source ~/.zshrc  # or source ~/.bashrc
+**Pattern Matching:**
+- Supports glob patterns: `**`, `*`, `?`
+- Multiple patterns per mapping
+- Longest (most specific) match wins
+
+</details>
+
+## 💡 How It Works
+
+```mermaid
+graph LR
+    A[cd ~/work/project] --> B{janus hook}
+    B --> C[Match path patterns]
+    C --> D[Find longest match]
+    D --> E[Set OPENCODE_CONFIG_DIR]
+    E --> F[opencode uses custom config]
 ```
 
-Now you can use `opencode` directly - it will automatically use the correct configuration based on your current directory.
+1. **Shell Integration** – Hook runs on directory change
+2. **Path Resolution** – Matches current path against patterns
+3. **Priority Selection** – Longest (most specific) pattern wins
+4. **Environment Setup** – Sets `OPENCODE_CONFIG_DIR` for the session
+5. **Isolated Execution** – Each process gets the right configuration
 
-### Uninstall
-
-To uninstall the hook:
+## 🛠️ Commands
 
 ```bash
-janus uninstall
+janus install    # Install shell hook (auto-detects shell)
+janus uninstall  # Remove shell hook
+janus --version  # Show version
+janus --help     # Show help
 ```
 
-
-## How It Works
-
-1. **Path Matching**: When you run a command, janus checks your current working directory against the configured patterns
-2. **Longest Prefix Priority**: If multiple patterns match, the longest (most specific) pattern wins
-3. **Environment Variable**: The tool sets `OPENCODE_CONFIG_DIR` to point to the matched configuration directory
-4. **Process Isolation**: Each opencode process gets its own configuration, preventing conflicts between different projects
-
-## Development
+## 🧪 Development
 
 ```bash
 # Run tests
 bun test
 
-# Run tests with coverage
+# Coverage report
 bun test --coverage
+
+# Type checking
+bun run typecheck
 
 # Build for production
 bun run build
-
-# Type check
-bun run typecheck
 ```
 
-## Project Structure
+## 📦 Project Structure
 
 ```
 src/
-├── types.ts              # TypeScript type definitions
-├── config.ts             # Configuration loading
-├── config.test.ts        # Config tests
-├── resolver.ts           # Path matching logic
-├── resolver.test.ts      # Resolver tests
-├── install.ts            # Shell hook installation/uninstallation
-├── install.test.ts       # Install command tests
-├── shell-hook.ts         # Shell hook generation
-├── shell-hook.test.ts    # Shell hook tests
-├── cli.ts                # CLI entry point
-└── cli.test.ts           # CLI tests
+├── cli.ts              # CLI entry point
+├── config.ts           # Configuration loading & validation
+├── resolver.ts         # Path matching engine
+├── install.ts          # Shell hook installer
+├── shell-hook.ts       # Hook generation logic
+├── types.ts            # TypeScript definitions
+└── *.test.ts           # Comprehensive test suite
 ```
 
-## License
+## 🤝 Contributing
 
-MIT
+Contributions are welcome! Feel free to:
 
-## Contributing
+- 🐛 [Report bugs](https://github.com/kuitos/janus/issues)
+- 💡 [Suggest features](https://github.com/kuitos/janus/issues)
+- 🔧 [Submit pull requests](https://github.com/kuitos/janus/pulls)
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 📄 License
 
-## Acknowledgments
+[MIT](LICENSE) © [kuitos](https://github.com/kuitos)
 
-- Built with [Bun](https://bun.sh)
-- Inspired by [direnv](https://direnv.net/) and [projj](https://github.com/popomore/projj)
+## 🙏 Acknowledgments
+
+Built with ❤️ using:
+- [Bun](https://bun.sh) – Fast all-in-one JavaScript runtime
+- [Zod](https://zod.dev) – TypeScript-first schema validation
+
+Inspired by:
+- [direnv](https://direnv.net/) – Environment switcher for the shell
+- [projj](https://github.com/popomore/projj) – Project management tool
