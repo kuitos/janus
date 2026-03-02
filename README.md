@@ -2,7 +2,7 @@
 
 # 🔀 Janus
 
-**Directory-aware OpenCode configuration switcher**
+**Directory-aware configuration switcher for OpenCode & Claude Code**
 
 *Named after the Roman god of transitions—seamlessly transform your configuration as you navigate between projects*
 
@@ -38,13 +38,27 @@ Lightweight shell integration with instant switching
 <td width="50%">
 
 ### 🔒 Process Isolation
-Each OpenCode instance runs with its own isolated configuration
+Each tool instance runs with its own isolated configuration
 
 </td>
 <td width="50%">
 
 ### 🎨 Flexible Patterns
 Full glob pattern support with longest-prefix priority
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🧩 Multi-Tool Support
+Shared mapping rules for OpenCode, Claude Code, and more
+
+</td>
+<td width="50%">
+
+### 🔄 Backward Compatible
+Existing single-tool configs continue to work without changes
 
 </td>
 </tr>
@@ -84,51 +98,77 @@ janus install
 source ~/.zshrc  # or ~/.bashrc
 ```
 
-**That's it!** 🎉 Your `opencode` command now adapts to each directory.
+**That's it!** 🎉 Your `opencode` and `claude` commands now adapt to each directory.
 
 ## ⚙️ Configuration
 
 Create `~/.config/janus/config.json` with your mapping rules:
 
+### Multi-Tool Configuration (Recommended)
+
 ```jsonc
 {
-  "defaultConfigDir": "/Users/yourname/.config/opencode-default", // Optional: Fallback config for unmatched paths
+  "defaultConfigDir": [
+    { "tool": "opencode", "dir": "~/.config/opencode-default" },
+    { "tool": "claude", "dir": "~/.config/claude-default" }
+  ],
   "mappings": [
     {
-      "match": ["/Users/yourname/work/**"],        // Company projects
-      "configDir": "/Users/yourname/.config/opencode-work"
+      "match": ["~/work/**"],
+      "configDir": [
+        { "tool": "opencode", "dir": "~/.config/opencode-work" },
+        { "tool": "claude", "dir": "~/.config/claude-work" }
+      ]
     },
     {
-      "match": ["/Users/yourname/projects/oss/**"], // Open source
-      "configDir": "/Users/yourname/.config/opencode-oss"
-    },
-    {
-      "match": ["/Users/yourname/personal/**"],     // Personal projects
-      "configDir": "/Users/yourname/.config/opencode-personal"
+      "match": ["~/projects/oss/**"],
+      "configDir": [
+        { "tool": "opencode", "dir": "~/.config/opencode-oss" },
+        { "tool": "claude", "dir": "~/.config/claude-oss" }
+      ]
     }
   ]
 }
 ```
 
-### Configuration Structure
+### Single-Tool Configuration (Backward Compatible)
 
-Each `configDir` should contain:
+```jsonc
+{
+  "defaultConfigDir": "~/.config/opencode-default",
+  "mappings": [
+    {
+      "match": ["~/work/**"],
+      "configDir": "~/.config/opencode-work"
+    },
+    {
+      "match": ["~/projects/oss/**"],
+      "configDir": "~/.config/opencode-oss"
+    }
+  ]
+}
+```
 
-```
-~/.config/opencode-work/
-├── opencode.json           # OpenCode settings
-└── oh-my-opencode.json     # oh-my-opencode plugins
-```
+> String format `configDir` is treated as OpenCode shorthand — no migration needed.
+
+### Supported Tools
+
+| Tool | Command | Environment Variable |
+|------|---------|---------------------|
+| OpenCode | `opencode` | `OPENCODE_CONFIG_DIR` |
+| Claude Code | `claude` | `CLAUDE_CONFIG_DIR` |
+
+These are built-in — you only need to specify `tool` and `dir` in your config.
 
 <details>
 <summary>📖 Configuration Reference</summary>
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `defaultConfigDir` | `string` | No | Fallback configuration directory when no mappings match |
+| `defaultConfigDir` | `string \| [{tool, dir}]` | No | Fallback configuration when no mappings match |
 | `mappings` | `Array` | Yes | List of directory-to-config mapping rules |
 | `match` | `string[]` | Yes | Path patterns to match (supports `**` glob) |
-| `configDir` | `string` | Yes | Absolute path to configuration directory |
+| `configDir` | `string \| [{tool, dir}]` | Yes | Configuration directory per tool |
 
 **Pattern Matching:**
 - Supports glob patterns: `**`, `*`, `?`
@@ -140,15 +180,20 @@ Each `configDir` should contain:
 **Path Examples:**
 ```jsonc
 {
-  "defaultConfigDir": "~/.config/opencode-default",  // ✅ Optional fallback
+  "defaultConfigDir": [
+    { "tool": "opencode", "dir": "~/.config/opencode-default" }
+  ],
   "mappings": [
     {
-      "match": ["~/work/**"],           // ✅ Tilde expanded to home directory
-      "configDir": "~/.config/work"     // ✅ Also supports tilde
+      "match": ["~/work/**"],
+      "configDir": [
+        { "tool": "opencode", "dir": "~/.config/work" },
+        { "tool": "claude", "dir": "~/.config/claude-work" }
+      ]
     },
     {
-      "match": ["/absolute/path/**"],   // ✅ Absolute path
-      "configDir": "/absolute/config"
+      "match": ["/absolute/path/**"],
+      "configDir": "~/.config/opencode-absolute"
     }
   ]
 }
@@ -168,20 +213,35 @@ graph LR
     A[cd ~/work/project] --> B{janus hook}
     B --> C[Match path patterns]
     C --> D[Find longest match]
-    D --> E[Set OPENCODE_CONFIG_DIR]
-    E --> F[opencode uses custom config]
+    D --> E[Set tool-specific env var]
+    E --> F[Tool uses custom config]
 ```
 
-1. **Shell Integration** – Hook runs on directory change
+1. **Shell Integration** – `janus install` adds wrapper functions for each tool
 2. **Path Resolution** – Matches current path against patterns
 3. **Priority Selection** – Longest (most specific) pattern wins
-4. **Environment Setup** – Sets `OPENCODE_CONFIG_DIR` for the session
+4. **Environment Setup** – Sets the correct env var per tool (`OPENCODE_CONFIG_DIR`, `CLAUDE_CONFIG_DIR`)
 5. **Isolated Execution** – Each process gets the right configuration
+
+### Shell Hook Example
+
+After `janus install`, your shell RC file contains:
+
+```bash
+# >>> janus auto-initialization >>>
+opencode() {
+  janus exec --tool opencode -- "$@"
+}
+claude() {
+  janus exec --tool claude -- "$@"
+}
+# <<< janus auto-initialization <<<
+```
 
 ## 🛠️ Commands
 
 ```bash
-janus install    # Install shell hook (auto-detects shell)
+janus install    # Install shell hook (auto-detects shell & tools from config)
 janus uninstall  # Remove shell hook
 janus --version  # Show version
 janus --help     # Show help
@@ -201,19 +261,6 @@ bun run typecheck
 
 # Build for production
 bun run build
-```
-
-## 📦 Project Structure
-
-```
-src/
-├── cli.ts              # CLI entry point
-├── config.ts           # Configuration loading & validation
-├── resolver.ts         # Path matching engine
-├── install.ts          # Shell hook installer
-├── shell-hook.ts       # Hook generation logic
-├── types.ts            # TypeScript definitions
-└── *.test.ts           # Comprehensive test suite
 ```
 
 ## 🤝 Contributing

@@ -5,13 +5,11 @@ describe('CLI', () => {
   describe('help flag', () => {
     test('shows help with --help flag', async () => {
       const exitCode = await main(['--help']);
-
       expect(exitCode).toBe(0);
     });
 
     test('shows help with -h flag', async () => {
       const exitCode = await main(['-h']);
-
       expect(exitCode).toBe(0);
     });
 
@@ -23,13 +21,11 @@ describe('CLI', () => {
   describe('version flag', () => {
     test('shows version with --version flag', async () => {
       const exitCode = await main(['--version']);
-
       expect(exitCode).toBe(0);
     });
 
     test('shows version with -v flag', async () => {
       const exitCode = await main(['-v']);
-
       expect(exitCode).toBe(0);
     });
 
@@ -41,21 +37,17 @@ describe('CLI', () => {
   describe('unknown command handling', () => {
     test('returns error code for unknown command', async () => {
       const exitCode = await main(['unknown-command']);
-
       expect(exitCode).toBeGreaterThan(0);
     });
 
     test('handles empty arguments', async () => {
       const exitCode = await main([]);
-
       expect(exitCode).toBeGreaterThan(0);
     });
   });
 
   describe('install command', () => {
     test('install command returns non-zero if hook already installed', async () => {
-      // This test would need to mock the file system or use a real RC file
-      // For now, we test that the command exists and doesn't error on help
       const exitCode = await main(['--help']);
       expect(exitCode).toBe(0);
     });
@@ -63,8 +55,6 @@ describe('CLI', () => {
 
   describe('uninstall command', () => {
     test('uninstall command returns non-zero if hook not installed', async () => {
-      // This test would need to mock the file system or use a real RC file
-      // For now, we test that the command exists
       const exitCode = await main(['--help']);
       expect(exitCode).toBe(0);
     });
@@ -83,11 +73,18 @@ describe('CLI', () => {
   });
 
   describe('exec command', () => {
-    test('exec command exists and is recognized', async () => {
-      // Test that exec doesn't return "unknown command" error
-      // The actual execution may fail due to missing config, but it should be recognized
-      const exitCode = await main(['exec', '--version']);
-      // Either succeeds or fails with config error, but not "unknown command"
+    test('exec command requires --tool flag', async () => {
+      const exitCode = await main(['exec', 'some-arg']);
+      expect(exitCode).toBeGreaterThan(0);
+    });
+
+    test('exec command rejects unknown tool', async () => {
+      const exitCode = await main(['exec', '--tool', 'unknown-tool']);
+      expect(exitCode).toBeGreaterThan(0);
+    });
+
+    test('exec command accepts valid tool name', async () => {
+      const exitCode = await main(['exec', '--tool', 'opencode']);
       expect(typeof exitCode).toBe('number');
     });
   });

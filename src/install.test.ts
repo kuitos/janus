@@ -54,7 +54,7 @@ describe('install module', () => {
       const content = `export PATH=/usr/local/bin:$PATH
 # >>> janus auto-initialization >>>
 opencode() {
-  janus exec -- "$@"
+  janus exec --tool opencode -- "$@"
 }
 # <<< janus auto-initialization <<<
 `;
@@ -65,7 +65,7 @@ opencode() {
 
   describe('installHook', () => {
     it('creates new file if it does not exist', () => {
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
 
       const content = readFileSync(testZshrc, 'utf-8');
       expect(content).toContain('# >>> janus auto-initialization >>>');
@@ -73,11 +73,21 @@ opencode() {
       expect(content).toContain('# <<< janus auto-initialization <<<');
     });
 
+    it('creates hook with multiple tools', () => {
+      installHook(testZshrc, 'zsh', ['opencode', 'claude']);
+
+      const content = readFileSync(testZshrc, 'utf-8');
+      expect(content).toContain('opencode()');
+      expect(content).toContain('janus exec --tool opencode -- "$@"');
+      expect(content).toContain('claude()');
+      expect(content).toContain('janus exec --tool claude -- "$@"');
+    });
+
     it('appends hook to existing file', () => {
       const originalContent = 'export EDITOR=vim\n';
       writeFileSync(testZshrc, originalContent, 'utf-8');
 
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
 
       const content = readFileSync(testZshrc, 'utf-8');
       expect(content).toContain(originalContent);
@@ -87,33 +97,33 @@ opencode() {
     it('throws error if hook is already installed', () => {
       const hookContent = `# >>> janus auto-initialization >>>
 opencode() {
-  janus exec -- "$@"
+  janus exec --tool opencode -- "$@"
 }
 # <<< janus auto-initialization <<<
 `;
       writeFileSync(testZshrc, hookContent, 'utf-8');
 
-      expect(() => installHook(testZshrc, 'zsh')).toThrow('Hook already installed');
+      expect(() => installHook(testZshrc, 'zsh', ['opencode'])).toThrow('Hook already installed');
     });
 
     it('generates correct zsh hook content', () => {
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
 
       const content = readFileSync(testZshrc, 'utf-8');
-      expect(content).toContain('janus exec -- "$@"');
+      expect(content).toContain('janus exec --tool opencode -- "$@"');
     });
 
     it('generates correct bash hook content', () => {
-      installHook(testBashrc, 'bash');
+      installHook(testBashrc, 'bash', ['opencode']);
 
       const content = readFileSync(testBashrc, 'utf-8');
-      expect(content).toContain('janus exec -- "$@"');
+      expect(content).toContain('janus exec --tool opencode -- "$@"');
     });
 
     it('preserves file ending with newline', () => {
       writeFileSync(testZshrc, 'export PATH=/usr/local/bin:$PATH\n', 'utf-8');
 
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
 
       const content = readFileSync(testZshrc, 'utf-8');
       expect(content).toStartWith('export PATH=/usr/local/bin:$PATH\n');
@@ -122,7 +132,7 @@ opencode() {
     it('adds newline if file does not end with newline', () => {
       writeFileSync(testZshrc, 'export PATH=/usr/local/bin:$PATH', 'utf-8');
 
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
 
       const content = readFileSync(testZshrc, 'utf-8');
       expect(content).toContain('export PATH=/usr/local/bin:$PATH\n# >>> janus auto-initialization >>>');
@@ -144,7 +154,7 @@ opencode() {
       const originalContent = 'export EDITOR=vim\nexport PATH=/usr/local/bin:$PATH\n';
       const hookContent = `# >>> janus auto-initialization >>>
 opencode() {
-  janus exec -- "$@"
+  janus exec --tool opencode -- "$@"
 }
 # <<< janus auto-initialization <<<
 `;
@@ -163,7 +173,7 @@ opencode() {
         'export EDITOR=vim',
         '# >>> janus auto-initialization >>>',
         'opencode() {',
-        '  janus exec -- "$@"',
+        '  janus exec --tool opencode -- "$@"',
         '}',
         '# <<< janus auto-initialization <<<',
         'export PATH=/usr/local/bin:$PATH'
@@ -181,7 +191,7 @@ opencode() {
 
 # >>> janus auto-initialization >>>
 opencode() {
-  janus exec -- "$@"
+  janus exec --tool opencode -- "$@"
 }
 # <<< janus auto-initialization <<<
 
@@ -200,7 +210,7 @@ export PATH=/usr/local/bin:$PATH
     it('results in empty file content if only hook exists', () => {
       const hookContent = `# >>> janus auto-initialization >>>
 opencode() {
-  janus exec -- "$@"
+  janus exec --tool opencode -- "$@"
 }
 # <<< janus auto-initialization <<<
 `;
@@ -216,7 +226,7 @@ opencode() {
   describe('integration tests', () => {
     it('can install and uninstall hook repeatedly', () => {
       // First install
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
       expect(isHookInstalled(testZshrc)).toBe(true);
 
       // Uninstall
@@ -224,7 +234,7 @@ opencode() {
       expect(isHookInstalled(testZshrc)).toBe(false);
 
       // Second install
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
       expect(isHookInstalled(testZshrc)).toBe(true);
     });
 
@@ -232,7 +242,7 @@ opencode() {
       const originalContent = 'export EDITOR=vim\nexport LANG=en_US.UTF-8\n';
       writeFileSync(testZshrc, originalContent, 'utf-8');
 
-      installHook(testZshrc, 'zsh');
+      installHook(testZshrc, 'zsh', ['opencode']);
       uninstallHook(testZshrc);
 
       const finalContent = readFileSync(testZshrc, 'utf-8');
@@ -243,7 +253,7 @@ opencode() {
       const hookContent = `
 # >>> janus auto-initialization >>>
 opencode() {
-  janus exec -- "$@"
+  janus exec --tool opencode -- "$@"
 }
 # <<< janus auto-initialization <<<
 

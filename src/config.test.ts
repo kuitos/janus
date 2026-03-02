@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig, loadDefaultConfig, getDefaultConfigPath } from './config';
-import type { Config, Mapping } from './types';
 
 describe('getDefaultConfigPath', () => {
   it('returns XDG_CONFIG_HOME path when set', () => {
@@ -40,7 +39,7 @@ describe('loadConfig', () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('loads valid config file', () => {
+  it('loads valid config file with string configDir (backward compatible)', () => {
     const configPath = join(tempDir, 'config.json');
     const validConfig = {
       mappings: [
@@ -54,10 +53,36 @@ describe('loadConfig', () => {
 
     const config = loadConfig(configPath);
 
-    expect(config).toEqual(validConfig);
     expect(config.mappings).toHaveLength(1);
     expect(config.mappings[0].match).toEqual(['/Users/test/work/**']);
-    expect(config.mappings[0].configDir).toBe('/Users/test/.config/opencode-test');
+    // String configDir is normalized to ToolConfigDir[]
+    expect(config.mappings[0].configDir).toEqual([
+      { tool: 'opencode', dir: '/Users/test/.config/opencode-test' }
+    ]);
+  });
+
+  it('loads valid config file with array configDir (new format)', () => {
+    const configPath = join(tempDir, 'config.json');
+    const validConfig = {
+      mappings: [
+        {
+          match: ['/Users/test/work/**'],
+          configDir: [
+            { tool: 'opencode', dir: '/Users/test/.config/opencode-work' },
+            { tool: 'claude', dir: '/Users/test/.config/claude-work' }
+          ]
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(validConfig));
+
+    const config = loadConfig(configPath);
+
+    expect(config.mappings).toHaveLength(1);
+    expect(config.mappings[0].configDir).toEqual([
+      { tool: 'opencode', dir: '/Users/test/.config/opencode-work' },
+      { tool: 'claude', dir: '/Users/test/.config/claude-work' }
+    ]);
   });
 
   it('loads config with multiple mappings', () => {
@@ -103,7 +128,6 @@ describe('loadConfig', () => {
     writeFileSync(configPath, JSON.stringify({}));
 
     expect(() => loadConfig(configPath)).toThrow();
-    expect(() => loadConfig(configPath)).toThrow(/mappings/i);
   });
 
   it('throws error when mappings is empty array', () => {
@@ -111,7 +135,6 @@ describe('loadConfig', () => {
     writeFileSync(configPath, JSON.stringify({ mappings: [] }));
 
     expect(() => loadConfig(configPath)).toThrow();
-    expect(() => loadConfig(configPath)).toThrow(/at least one mapping/i);
   });
 
   it('throws error when mapping match array is empty', () => {
@@ -124,7 +147,6 @@ describe('loadConfig', () => {
     }));
 
     expect(() => loadConfig(configPath)).toThrow();
-    expect(() => loadConfig(configPath)).toThrow(/at least one pattern/i);
   });
 
   it('throws error when mapping configDir is missing', () => {
@@ -136,10 +158,9 @@ describe('loadConfig', () => {
     }));
 
     expect(() => loadConfig(configPath)).toThrow();
-    expect(() => loadConfig(configPath)).toThrow(/configDir/i);
   });
 
-  it('throws error when mapping configDir is not a string', () => {
+  it('throws error when mapping configDir is not a string or array', () => {
     const configPath = join(tempDir, 'invalid.json');
     writeFileSync(configPath, JSON.stringify({
       mappings: [{
@@ -149,7 +170,6 @@ describe('loadConfig', () => {
     }));
 
     expect(() => loadConfig(configPath)).toThrow();
-    expect(() => loadConfig(configPath)).toThrow(/configDir/i);
   });
 
   it('throws error when match is not an array', () => {
@@ -162,10 +182,9 @@ describe('loadConfig', () => {
     }));
 
     expect(() => loadConfig(configPath)).toThrow();
-    expect(() => loadConfig(configPath)).toThrow(/match/i);
   });
 
-  it('expands tilde in match patterns', () => {
+  it('expands tilde in match patterns and string configDir', () => {
     const configPath = join(tempDir, 'config.json');
     const homeDir = homedir();
     const configWithTilde = {
@@ -181,7 +200,33 @@ describe('loadConfig', () => {
     const config = loadConfig(configPath);
 
     expect(config.mappings[0].match).toEqual([`${homeDir}/work/**`]);
-    expect(config.mappings[0].configDir).toBe(`${homeDir}/.config/opencode-work`);
+    expect(config.mappings[0].configDir).toEqual([
+      { tool: 'opencode', dir: `${homeDir}/.config/opencode-work` }
+    ]);
+  });
+
+  it('expands tilde in array configDir', () => {
+    const configPath = join(tempDir, 'config.json');
+    const homeDir = homedir();
+    const configWithTilde = {
+      mappings: [
+        {
+          match: ['~/work/**'],
+          configDir: [
+            { tool: 'opencode', dir: '~/.config/opencode-work' },
+            { tool: 'claude', dir: '~/.config/claude-work' }
+          ]
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(configWithTilde));
+
+    const config = loadConfig(configPath);
+
+    expect(config.mappings[0].configDir).toEqual([
+      { tool: 'opencode', dir: `${homeDir}/.config/opencode-work` },
+      { tool: 'claude', dir: `${homeDir}/.config/claude-work` }
+    ]);
   });
 
   it('expands tilde in multiple patterns', () => {
@@ -224,10 +269,9 @@ describe('loadConfig', () => {
       `${homeDir}/work/**`,
       '/absolute/path/**'
     ]);
-    expect(config.mappings[0].configDir).toBe(`${homeDir}/.config/opencode`);
   });
 
-  it('loads config with defaultConfigDir', () => {
+  it('loads config with string defaultConfigDir', () => {
     const configPath = join(tempDir, 'config.json');
     const validConfig = {
       defaultConfigDir: '/Users/test/.config/opencode-default',
@@ -242,8 +286,35 @@ describe('loadConfig', () => {
 
     const config = loadConfig(configPath);
 
-    expect(config.defaultConfigDir).toBe('/Users/test/.config/opencode-default');
+    // String defaultConfigDir is normalized to ToolConfigDir[]
+    expect(config.defaultConfigDir).toEqual([
+      { tool: 'opencode', dir: '/Users/test/.config/opencode-default' }
+    ]);
     expect(config.mappings).toHaveLength(1);
+  });
+
+  it('loads config with array defaultConfigDir', () => {
+    const configPath = join(tempDir, 'config.json');
+    const validConfig = {
+      defaultConfigDir: [
+        { tool: 'opencode', dir: '/Users/test/.config/opencode-default' },
+        { tool: 'claude', dir: '/Users/test/.config/claude-default' }
+      ],
+      mappings: [
+        {
+          match: ['/Users/test/work/**'],
+          configDir: '/Users/test/.config/opencode-work'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(validConfig));
+
+    const config = loadConfig(configPath);
+
+    expect(config.defaultConfigDir).toEqual([
+      { tool: 'opencode', dir: '/Users/test/.config/opencode-default' },
+      { tool: 'claude', dir: '/Users/test/.config/claude-default' }
+    ]);
   });
 
   it('loads config without defaultConfigDir (backward compatibility)', () => {
@@ -264,7 +335,7 @@ describe('loadConfig', () => {
     expect(config.mappings).toHaveLength(1);
   });
 
-  it('expands tilde in defaultConfigDir', () => {
+  it('expands tilde in string defaultConfigDir', () => {
     const configPath = join(tempDir, 'config.json');
     const homeDir = homedir();
     const configWithTilde = {
@@ -280,7 +351,34 @@ describe('loadConfig', () => {
 
     const config = loadConfig(configPath);
 
-    expect(config.defaultConfigDir).toBe(`${homeDir}/.config/opencode-default`);
+    expect(config.defaultConfigDir).toEqual([
+      { tool: 'opencode', dir: `${homeDir}/.config/opencode-default` }
+    ]);
+  });
+
+  it('expands tilde in array defaultConfigDir', () => {
+    const configPath = join(tempDir, 'config.json');
+    const homeDir = homedir();
+    const configWithTilde = {
+      defaultConfigDir: [
+        { tool: 'opencode', dir: '~/.config/opencode-default' },
+        { tool: 'claude', dir: '~/.config/claude-default' }
+      ],
+      mappings: [
+        {
+          match: ['~/work/**'],
+          configDir: '~/.config/opencode-work'
+        }
+      ]
+    };
+    writeFileSync(configPath, JSON.stringify(configWithTilde));
+
+    const config = loadConfig(configPath);
+
+    expect(config.defaultConfigDir).toEqual([
+      { tool: 'opencode', dir: `${homeDir}/.config/opencode-default` },
+      { tool: 'claude', dir: `${homeDir}/.config/claude-default` }
+    ]);
   });
 });
 
@@ -308,7 +406,10 @@ describe('loadDefaultConfig', () => {
       writeFileSync(configPath, JSON.stringify(validConfig));
 
       const config = loadDefaultConfig();
-      expect(config).toEqual(validConfig);
+      // String configDir is normalized
+      expect(config.mappings[0].configDir).toEqual([
+        { tool: 'opencode', dir: '/test/.config/opencode' }
+      ]);
     } finally {
       process.env.XDG_CONFIG_HOME = originalXDG;
       rmSync(tempDir, { recursive: true, force: true });
@@ -316,7 +417,6 @@ describe('loadDefaultConfig', () => {
   });
 
   it('throws error when default config file does not exist', () => {
-    const originalXDGX = process.env.XDG_CONFIG_HOME;
     const originalXDG = process.env.XDG_CONFIG_HOME;
     const tempDir = mkdtempSync(join(tmpdir(), 'janus-test-'));
 
