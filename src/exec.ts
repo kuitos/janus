@@ -1,16 +1,26 @@
 import { spawn } from 'node:child_process';
 import { resolvePath } from './resolver';
-import type { Mapping } from './types';
+import type { NormalizedMapping, ToolConfigDir } from './types';
+import { getToolDef } from './tool-registry';
 
 export async function execWithConfig(
-  configDir: string,
-  opencodeArgs: string[]
+  toolName: string,
+  configDirs: ToolConfigDir[],
+  args: string[]
 ): Promise<number> {
+  const toolDef = getToolDef(toolName);
+  const toolConfig = configDirs.find(tc => tc.tool === toolName);
+
+  if (!toolConfig) {
+    console.error(`No config directory found for tool: ${toolName}`);
+    return 1;
+  }
+
   return new Promise((resolve) => {
-    const child = spawn('opencode', opencodeArgs, {
+    const child = spawn(toolDef.command, args, {
       env: {
         ...process.env,
-        OPENCODE_CONFIG_DIR: configDir
+        [toolDef.envVar]: toolConfig.dir
       },
       stdio: 'inherit'
     });
@@ -20,7 +30,7 @@ export async function execWithConfig(
     });
 
     child.on('error', (error) => {
-      console.error('Failed to start opencode:', error);
+      console.error(`Failed to start ${toolDef.command}:`, error);
       resolve(1);
     });
   });
@@ -28,9 +38,10 @@ export async function execWithConfig(
 
 export async function exec(
   cwd: string,
-  mappings: Mapping[],
-  opencodeArgs: string[],
-  defaultConfigDir?: string
+  mappings: NormalizedMapping[],
+  toolName: string,
+  args: string[],
+  defaultConfigDir?: ToolConfigDir[]
 ): Promise<number> {
   const match = resolvePath(cwd, mappings, defaultConfigDir);
 
@@ -38,5 +49,5 @@ export async function exec(
     return 1;
   }
 
-  return execWithConfig(match.configDir, opencodeArgs);
+  return execWithConfig(toolName, match.configDir, args);
 }

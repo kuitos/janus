@@ -51,7 +51,7 @@ export function isHookInstalled(rcFilePath: string): boolean {
  * Install shell hook to the RC file
  * @throws If hook is already installed
  */
-export function installHook(rcFilePath: string, shellType: 'zsh' | 'bash'): void {
+export function installHook(rcFilePath: string, shellType: 'zsh' | 'bash', tools: string[]): void {
   // Check if already installed
   if (existsSync(rcFilePath)) {
     const content = readFileSync(rcFilePath, 'utf-8');
@@ -60,7 +60,7 @@ export function installHook(rcFilePath: string, shellType: 'zsh' | 'bash'): void
     }
   }
 
-  const hook = generateShellHook(shellType);
+  const hook = generateShellHook(shellType, tools);
   const hookBlock = `${HOOK_START_MARKER}
 ${hook}
 ${HOOK_END_MARKER}

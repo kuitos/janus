@@ -12,7 +12,8 @@ import {
   uninstallHook
 } from './install';
 import { exec } from './exec';
-import { loadDefaultConfig } from './config';
+import { loadDefaultConfig, extractToolNames } from './config';
+import { isValidTool } from './tool-registry';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -36,11 +37,14 @@ export function showHelp(): void {
 Commands:
   install      Install shell hook to .zshrc or .bashrc
   uninstall    Uninstall shell hook from shell RC file
-  exec         Execute opencode with configured environment (used by shell hook)
+  exec         Execute tool with configured environment (used by shell hook)
 
 Options:
   --help, -h      Show this help message
   --version, -v   Show version number
+
+Exec options:
+  --tool <name>   Tool to execute (e.g., opencode, claude)
 `);
 }
 
@@ -55,9 +59,13 @@ async function handleInstall(): Promise<number> {
       return 1;
     }
 
-    installHook(rcFile, shellType);
+    const config = loadDefaultConfig();
+    const tools = extractToolNames(config);
+
+    installHook(rcFile, shellType, tools);
 
     console.log(`✓ Successfully installed janus hook to ${rcFile}`);
+    console.log(`  Tools: ${tools.join(', ')}`);
     console.log(`  Please restart your shell or run: source ${rcFile}`);
 
     return 0;
@@ -88,11 +96,11 @@ async function handleUninstall(): Promise<number> {
   }
 }
 
-async function handleExec(args: string[]): Promise<number> {
+async function handleExec(toolName: string, args: string[]): Promise<number> {
   try {
     const cwd = process.cwd();
     const config = loadDefaultConfig();
-    return await exec(cwd, config.mappings, args, config.defaultConfigDir);
+    return await exec(cwd, config.mappings, toolName, args, config.defaultConfigDir);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
     return 1;
@@ -109,6 +117,9 @@ export async function main(args: string[]): Promise<number> {
       version: {
         type: 'boolean' as const,
         short: 'v',
+      },
+      tool: {
+        type: 'string' as const,
       },
     };
 
@@ -141,9 +152,22 @@ export async function main(args: string[]): Promise<number> {
     } else if (command === 'uninstall') {
       return await handleUninstall();
     } else if (command === 'exec') {
+      const toolName = values.tool;
+      if (!toolName) {
+        console.error('Error: --tool is required for exec command');
+        console.error('Usage: janus exec --tool <name> -- [args...]');
+        return 1;
+      }
+
+      if (!isValidTool(toolName)) {
+        console.error(`Error: Unknown tool: ${toolName}`);
+        console.error('Available tools: opencode, claude');
+        return 1;
+      }
+
       // exec 命令接收所有剩余的参数
       const execArgs = positionals.slice(1);
-      return await handleExec(execArgs);
+      return await handleExec(toolName, execArgs);
     } else {
       console.error(`Error: Unknown command: ${command}`);
       console.error('Use --help for usage information');
@@ -163,4 +187,3 @@ if (mainModule && realpathSync(scriptPath) === mainModule) {
   const exitCode = await main(process.argv.slice(2));
   process.exit(exitCode);
 }
-

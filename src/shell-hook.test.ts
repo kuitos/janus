@@ -2,26 +2,31 @@ import { describe, it, expect } from 'bun:test';
 import { generateShellHook, getAliasWarning } from './shell-hook';
 
 describe('generateShellHook', () => {
-  it('generates valid zsh shell hook with wrapper function', () => {
-    const hook = generateShellHook('zsh');
+  it('generates valid zsh shell hook for single tool', () => {
+    const hook = generateShellHook('zsh', ['opencode']);
 
     expect(hook).toContain('opencode()');
-    expect(hook).toContain('janus exec -- "$@"');
-    expect(hook).toBeDefined();
-    expect(typeof hook).toBe('string');
+    expect(hook).toContain('janus exec --tool opencode -- "$@"');
   });
 
-  it('generates valid bash shell hook with wrapper function', () => {
-    const hook = generateShellHook('bash');
+  it('generates valid bash shell hook for single tool', () => {
+    const hook = generateShellHook('bash', ['opencode']);
 
     expect(hook).toContain('opencode()');
-    expect(hook).toContain('janus exec -- "$@"');
-    expect(hook).toBeDefined();
-    expect(typeof hook).toBe('string');
+    expect(hook).toContain('janus exec --tool opencode -- "$@"');
+  });
+
+  it('generates hooks for multiple tools', () => {
+    const hook = generateShellHook('zsh', ['opencode', 'claude']);
+
+    expect(hook).toContain('opencode()');
+    expect(hook).toContain('janus exec --tool opencode -- "$@"');
+    expect(hook).toContain('claude()');
+    expect(hook).toContain('janus exec --tool claude -- "$@"');
   });
 
   it('zsh hook passes syntax validation with zsh -n', async () => {
-    const hook = generateShellHook('zsh');
+    const hook = generateShellHook('zsh', ['opencode', 'claude']);
 
     const proc = Bun.spawn(['zsh', '-n', '-c', hook], {
       stdio: ['inherit', 'pipe', 'inherit']
@@ -33,7 +38,7 @@ describe('generateShellHook', () => {
   });
 
   it('bash hook passes syntax validation with bash -n', async () => {
-    const hook = generateShellHook('bash');
+    const hook = generateShellHook('bash', ['opencode', 'claude']);
 
     const proc = Bun.spawn(['bash', '-n', '-c', hook], {
       stdio: ['inherit', 'pipe', 'inherit']
@@ -44,73 +49,41 @@ describe('generateShellHook', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('zsh hook contains function definition with proper syntax', () => {
-    const hook = generateShellHook('zsh');
+  it('hook contains function definitions with proper syntax', () => {
+    const hook = generateShellHook('zsh', ['opencode']);
 
     expect(hook).toMatch(/opencode\(\)\s*\{/);
     expect(hook).toContain('}');
   });
 
-  it('bash hook contains function definition with proper syntax', () => {
-    const hook = generateShellHook('bash');
-
-    expect(hook).toMatch(/opencode\(\)\s*\{/);
-    expect(hook).toContain('}');
-  });
-
-  it('zsh hook uses "$@" to preserve all arguments', () => {
-    const hook = generateShellHook('zsh');
+  it('hook uses "$@" to preserve all arguments', () => {
+    const hook = generateShellHook('zsh', ['opencode']);
 
     expect(hook).toContain('"$@"');
   });
 
-  it('bash hook uses "$@" to preserve all arguments', () => {
-    const hook = generateShellHook('bash');
+  it('hook calls janus exec command with --tool', () => {
+    const hook = generateShellHook('zsh', ['opencode']);
 
-    expect(hook).toContain('"$@"');
-  });
-
-  it('zsh hook calls opencode-env exec command', () => {
-    const hook = generateShellHook('zsh');
-
-    expect(hook).toContain('janus exec');
-  });
-
-  it('bash hook calls opencode-env exec command', () => {
-    const hook = generateShellHook('bash');
-
-    expect(hook).toContain('janus exec');
+    expect(hook).toContain('janus exec --tool opencode');
   });
 });
 
 describe('getAliasWarning', () => {
-  it('returns warning message for zsh when alias exists', () => {
-    const warning = getAliasWarning('zsh');
+  it('returns warning message mentioning tool commands', () => {
+    const warning = getAliasWarning(['opencode']);
 
     expect(warning).toBeDefined();
     expect(typeof warning).toBe('string');
     expect(warning.length).toBeGreaterThan(0);
-  });
-
-  it('returns warning message for bash when alias exists', () => {
-    const warning = getAliasWarning('bash');
-
-    expect(warning).toBeDefined();
-    expect(typeof warning).toBe('string');
-    expect(warning.length).toBeGreaterThan(0);
-  });
-
-  it('zsh warning message mentions alias conflict', () => {
-    const warning = getAliasWarning('zsh');
-
     expect(warning.toLowerCase()).toContain('alias');
     expect(warning).toContain('opencode');
   });
 
-  it('bash warning message mentions alias conflict', () => {
-    const warning = getAliasWarning('bash');
+  it('returns warning mentioning multiple tool commands', () => {
+    const warning = getAliasWarning(['opencode', 'claude']);
 
-    expect(warning.toLowerCase()).toContain('alias');
     expect(warning).toContain('opencode');
+    expect(warning).toContain('claude');
   });
 });
