@@ -1,12 +1,12 @@
 import { resolvePath } from './resolver';
-import type { Mapping } from './types';
+import type { NormalizedMapping, ToolConfigDir } from './types';
 
 export function testPath(
   path: string,
-  mappings: Mapping[]
+  mappings: NormalizedMapping[]
 ): {
   matched: boolean;
-  configDir?: string;
+  configDir?: ToolConfigDir[];
   matchedPattern?: string;
   message: string;
 } {
@@ -31,11 +31,13 @@ export function testPath(
 
 export function formatTestResult(result: ReturnType<typeof testPath>): string {
   if (result.matched) {
+    const toolLines = result.configDir!.map(tc => `    ${tc.tool}: ${tc.dir}`).join('\n');
     return `${result.message}
   Pattern: ${result.matchedPattern}
-  Config:  ${result.configDir}`;
+  Config:
+${toolLines}`;
   }
 
   return `${result.message}
-  Using default OpenCode configuration`;
+  Using default configuration`;
 }

@@ -1,5 +1,5 @@
 import { realpathSync } from 'fs';
-import type { Mapping } from './types';
+import type { NormalizedMapping, ToolConfigDir } from './types';
 import { expandTilde } from './path-utils';
 
 export function matchesPattern(path: string, pattern: string): boolean {
@@ -34,10 +34,10 @@ export function matchesPattern(path: string, pattern: string): boolean {
   return false;
 }
 
-type MatchCandidate = { pattern: string; configDir: string };
+type MatchCandidate = { pattern: string; configDir: ToolConfigDir[] };
 
-function findBestMatchForPath(path: string, candidates: MatchCandidate[]): { configDir: string; matchedPattern: string } | null {
-  let bestMatch: { configDir: string; matchedPattern: string } | null = null;
+function findBestMatchForPath(path: string, candidates: MatchCandidate[]): { configDir: ToolConfigDir[]; matchedPattern: string } | null {
+  let bestMatch: { configDir: ToolConfigDir[]; matchedPattern: string } | null = null;
   let longestPattern = '';
 
   for (const candidate of candidates) {
@@ -57,16 +57,16 @@ function findBestMatchForPath(path: string, candidates: MatchCandidate[]): { con
 
 export function findLongestMatch(
   path: string,
-  candidates: Array<{ pattern: string; configDir: string }>
-): { configDir: string; matchedPattern: string } | null {
+  candidates: Array<{ pattern: string; configDir: ToolConfigDir[] }>
+): { configDir: ToolConfigDir[]; matchedPattern: string } | null {
   return findBestMatchForPath(path, candidates);
 }
 
 export function resolvePath(
   path: string,
-  mappings: Mapping[],
-  defaultConfigDir?: string
-): { configDir: string; matchedPattern: string } | null {
+  mappings: NormalizedMapping[],
+  defaultConfigDir?: ToolConfigDir[]
+): { configDir: ToolConfigDir[]; matchedPattern: string } | null {
   if (mappings.length === 0) {
     // If no mappings but defaultConfigDir is set, return it
     if (defaultConfigDir) {
